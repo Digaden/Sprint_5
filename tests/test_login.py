@@ -2,7 +2,7 @@ import pytest
 from selenium.webdriver.common.by import By
 from locators import *
 
-BASE_URL = "https://stellarburgers.nomoreparties.site/"
+from urls import BASE_URL
 
 @pytest.mark.parametrize("email,password", [
     ("testuser@example.com", "correct_password"),  # валидные данные
@@ -31,11 +31,18 @@ def test_login_variants(browser, email, password):
         error_elements = browser.find_elements(*ERROR_MESSAGE)
         assert error_elements and any(e.is_displayed() for e in error_elements)
 
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 def test_login_via_register_form(browser):
     """Проверка перехода на логин из формы регистрации."""
     browser.get(BASE_URL)
     browser.find_element(*LOGIN_BUTTON_MAIN).click()
     # Нажать ссылку Войти в форме регистрации
     browser.find_element(*REGISTER_LOGIN_LINK).click()
-    # Проверяем, что url содержит /login или есть кнопка "Войти"
-    assert browser.find_element(*LOGIN_SUBMIT_BUTTON).is_displayed()
+    
+    # Явное ожидание появления кнопки "Войти"
+    wait = WebDriverWait(browser, 10)
+    login_button = wait.until(EC.visibility_of_element_located(LOGIN_SUBMIT_BUTTON))
+
+    assert login_button.is_displayed()

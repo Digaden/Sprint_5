@@ -1,7 +1,6 @@
 import pytest
 from locators import *
-
-BASE_URL = "https://stellarburgers.nomoreparties.site/"
+from urls import BASE_URL
 
 @pytest.fixture(scope="function")
 def open_constructor(browser):
@@ -16,17 +15,19 @@ def open_constructor(browser):
     browser.find_element(*CONSTRUCTOR_LINK).click()
     yield
 
-def test_buns_section_active(browser, open_constructor):
-    browser.find_element(*SECTION_BUNS).click()
-    active_tab = browser.find_element(*ACTIVE_TAB)
-    assert active_tab.text == "Булки"
+class TestConstructorSections:
 
-def test_sauces_section_active(browser, open_constructor):
-    browser.find_element(*SECTION_SAUCES).click()
-    active_tab = browser.find_element(*ACTIVE_TAB)
-    assert active_tab.text == "Соусы"
+    def test_buns_section_active(self, browser, open_constructor):
+        browser.find_element(*SECTION_BUNS).click()
+        active_tab = browser.find_element(*ACTIVE_TAB)
+        assert active_tab.text == "Булки"
 
-def test_fillings_section_active(browser, open_constructor):
-    browser.find_element(*SECTION_FILLINGS).click()
-    active_tab = browser.find_element(*ACTIVE_TAB)
-    assert active_tab.text == "Начинки"
+    def test_sauces_section_active(self, browser, open_constructor):
+        browser.find_element(*SECTION_SAUCES).click()
+        active_tab = browser.find_element(*ACTIVE_TAB)
+        assert active_tab.text == "Соусы"
+
+    def test_fillings_section_active(self, browser, open_constructor):
+        browser.find_element(*SECTION_FILLINGS).click()
+        active_tab = browser.find_element(*ACTIVE_TAB)
+        assert active_tab.text == "Начинки"

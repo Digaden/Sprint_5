@@ -4,31 +4,51 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-BASE_URL = "https://stellarburgers.nomoreparties.site"
+from urls import BASE_URL
 
-def test_successful_registration(driver, new_user_credentials):
-    driver.get(f"{BASE_URL}/register")
+DEFAULT_WAIT = 10  # константа таймаута
 
-    driver.find_element(*REGISTER_NAME_INPUT).send_keys(new_user_credentials['name'])
-    driver.find_element(*REGISTER_EMAIL_INPUT).send_keys(new_user_credentials['email'])
-    driver.find_element(*REGISTER_PASSWORD_INPUT).send_keys(new_user_credentials['password'])
-    driver.find_element(*REGISTER_SUBMIT_BUTTON).click()
+def test_successful_registration(browser, new_user_credentials):
+    browser.get(f"{BASE_URL}/register")
 
-    # ждем перехода на страницу после успешной регистрации — например, в личный кабинет
-    WebDriverWait(driver, 5).until(EC.url_contains("profile"))
+    # Явное ожидание появления полей регистрации
+    wait = WebDriverWait(browser, DEFAULT_WAIT)
+    wait.until(EC.visibility_of_element_located(REGISTER_NAME_INPUT))
+    wait.until(EC.visibility_of_element_located(REGISTER_EMAIL_INPUT))
+    wait.until(EC.visibility_of_element_located(REGISTER_PASSWORD_INPUT))
+    wait.until(EC.element_to_be_clickable(REGISTER_SUBMIT_BUTTON))
 
-    assert "profile" in driver.current_url
+    browser.find_element(*REGISTER_NAME_INPUT).send_keys(new_user_credentials['name'])
+    browser.find_element(*REGISTER_EMAIL_INPUT).send_keys(new_user_credentials['email'])
+    browser.find_element(*REGISTER_PASSWORD_INPUT).send_keys(new_user_credentials['password'])
+    browser.find_element(*REGISTER_SUBMIT_BUTTON).click()
 
-def test_registration_with_invalid_password(driver, new_user_credentials):
-    driver.get(f"{BASE_URL}/register")
+    # Ждем перехода на страницу профиля (или любую другую страницу успешной регистрации)
+    wait.until(EC.url_contains("profile"))
 
-    driver.find_element(*REGISTER_NAME_INPUT).send_keys(new_user_credentials['name'])
-    driver.find_element(*REGISTER_EMAIL_INPUT).send_keys(new_user_credentials['email'])
-    driver.find_element(*REGISTER_PASSWORD_INPUT).send_keys("123")  # короткий пароль
-    driver.find_element(*REGISTER_SUBMIT_BUTTON).click()
+    assert "profile" in browser.current_url
 
-    # Ожидаем появления ошибки — здесь пример, надо уточнить по сайту
-    error_element = WebDriverWait(driver, 5).until(
-        EC.visibility_of_element_located((By.XPATH, "//p[contains(text(),'Некорректный пароль')]"))
-    )
+
+def test_registration_with_invalid_password(browser, new_user_credentials):
+    browser.get(f"{BASE_URL}/register")
+
+    wait = WebDriverWait(browser, DEFAULT_WAIT)
+    wait.until(EC.visibility_of_element_located(REGISTER_NAME_INPUT))
+    wait.until(EC.visibility_of_element_located(REGISTER_EMAIL_INPUT))
+    wait.until(EC.visibility_of_element_located(REGISTER_PASSWORD_INPUT))
+    wait.until(EC.element_to_be_clickable(REGISTER_SUBMIT_BUTTON))
+
+    browser.find_element(*REGISTER_NAME_INPUT).send_keys(new_user_credentials['name'])
+    browser.find_element(*REGISTER_EMAIL_INPUT).send_keys(new_user_credentials['email'])
+    
+    # Вводим неверный пароль
+    browser.find_element(*REGISTER_PASSWORD_INPUT).send_keys("123")
+    browser.find_element(*REGISTER_SUBMIT_BUTTON).click()
+
+    # Ожидаем появления сообщения об ошибке.
+    # Лучше использовать локатор из locators.py, если есть. Если нет, стоит добавить туда:
+
+    INVALID_PASSWORD_ERROR = (By.XPATH, "//p[contains(text(),'Некорректный пароль')]")
+
+    error_element = wait.until(EC.visibility_of_element_located(INVALID_PASSWORD_ERROR))
     assert error_element.is_displayed()
