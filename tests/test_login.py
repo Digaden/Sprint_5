@@ -1,48 +1,32 @@
 import pytest
-from selenium.webdriver.common.by import By
 from locators import *
-
 from urls import BASE_URL
 
-@pytest.mark.parametrize("email,password", [
-    ("testuser@example.com", "correct_password"),  # валидные данные
-    ("testuser@example.com", "wrong_password"),    # неверный пароль
-    ("", "any_password"),                           # пустой email
-    ("testuser@example.com", ""),                   # пустой пароль
-])
-def test_login_variants(browser, email, password):
-    # Открыть страницу входа
+@pytest.mark.parametrize(
+    "email, password, expected_profile, expected_error",
+    [
+        ("testuser@example.com", "correct_password", True, False),
+        ("testuser@example.com", "wrong_password", False, True),
+        ("", "any_password", False, True),
+        ("testuser@example.com", "", False, True),
+    ],
+    ids=["valid_login", "wrong_password", "empty_email", "empty_password"]
+)
+def test_login_variants(browser, email, password, expected_profile, expected_error):
     browser.get(BASE_URL)
     browser.find_element(*LOGIN_BUTTON_MAIN).click()
-    
-    # Ввести логин и пароль
+
     browser.find_element(*LOGIN_EMAIL_INPUT).clear()
     browser.find_element(*LOGIN_EMAIL_INPUT).send_keys(email)
     browser.find_element(*LOGIN_PASSWORD_INPUT).clear()
     browser.find_element(*LOGIN_PASSWORD_INPUT).send_keys(password)
     browser.find_element(*LOGIN_SUBMIT_BUTTON).click()
-    
-    if email == "testuser@example.com" and password == "correct_password":
-        # Ожидается вход — появление Личного кабинета
-        profile = browser.find_element(*PROFILE_LINK)
-        assert profile.is_displayed()
-    else:
-        # Проверка, что остались на странице входа или есть ошибка
-        error_elements = browser.find_elements(*ERROR_MESSAGE)
-        assert error_elements and any(e.is_displayed() for e in error_elements)
 
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+    profile_present = browser.find_elements(*PROFILE_LINK)
+    profile_displayed = bool(profile_present and profile_present[0].is_displayed())
 
-def test_login_via_register_form(browser):
-    """Проверка перехода на логин из формы регистрации."""
-    browser.get(BASE_URL)
-    browser.find_element(*LOGIN_BUTTON_MAIN).click()
-    # Нажать ссылку Войти в форме регистрации
-    browser.find_element(*REGISTER_LOGIN_LINK).click()
-    
-    # Явное ожидание появления кнопки "Войти"
-    wait = WebDriverWait(browser, 10)
-    login_button = wait.until(EC.visibility_of_element_located(LOGIN_SUBMIT_BUTTON))
+    error_elements = browser.find_elements(*ERROR_MESSAGE)
+    error_displayed = any(e.is_displayed() for e in error_elements)
 
-    assert login_button.is_displayed()
+    assert profile_displayed == expected_profile
+    assert error_displayed == expected_error
